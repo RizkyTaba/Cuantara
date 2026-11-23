@@ -251,7 +251,7 @@ async function exportX(all){
  else{w4.mergeCells(5,1,5,6);w4.getCell(5,1).value='Belum ada target. Bikin satu dulu, bestie.';w4.getCell(5,1).font={italic:true,color:{argb:'FF6B7A74'}}}
  try{const buf=await wb.xlsx.writeBuffer();await dl.save({filename:'cuantara-'+(all?'semua-data':M)+'.xlsx',data:new Blob([buf])});closeS()}catch(e){if(!e||e.code!='declined')toast('Ekspor gagal ('+((e&&e.code)||'error')+')')}}
 let HL=null;
-function cleanDemo(){if(S.tx.some(t=>t.x)||S.goals.some(g=>g.x)){S.tx=S.tx.filter(t=>!t.x);S.goals=S.goals.filter(g=>!g.x);(S.xb||[]).forEach(c=>delete S.bud[c]);S.xb=[];save()}}
+
 function cnt(e){if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;const m=e.textContent.trim().match(/^([+-]?)Rp([\d.]+)$/);if(!m)return;const v=+m[2].replace(/\./g,''),s=performance.now(),f=n=>{const p=Math.min(1,(n-s)/700);e.textContent=m[1]+'Rp'+Math.round(v*(1-Math.pow(1-p,3))).toLocaleString('id-ID');if(p<1)requestAnimationFrame(f)};e.textContent=m[1]+'Rp0';requestAnimationFrame(f)}
 function motion(){const A=$('#app');[...A.children].forEach((e,i)=>e.style.animationDelay=Math.min(i,10)*45+'ms');A.querySelectorAll('#list>*').forEach((e,i)=>e.style.animationDelay=Math.min(i,12)*30+'ms');A.querySelectorAll('.hero h2,.hero b,.card h2,.card>b').forEach(cnt)}
 P.bell=`<path d='M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0'/>`;
@@ -330,7 +330,7 @@ function saveAcc(id){const n=$('#an').value.trim(),b=num('ab');if(!n)return toas
 function delAcc(id){if(S.tx.some(t=>t.a==id||t.to==id))return toast('Dompet masih dipakai transaksi');if(S.acc.length<2)return toast('Minimal satu dompet');S.acc=S.acc.filter(a=>a.id!=id);done()}
 function bakSheet(){sheet(`<h3>Cadangan dan pemulihan</h3><small>Salin teks ini lalu simpan (mis. di catatan). Untuk memulihkan, tempel teks cadangan di sini lalu tekan Pulihkan. Data yang ada sekarang akan diganti.</small><textarea class="fi" id="bk" rows="8">${E(JSON.stringify(S))}</textarea><button class="btn" onclick="cp()">Salin</button><button class="btn dg" onclick="imp()">Pulihkan</button>`)}
 function cp(){const e=$('#bk');e.select();try{navigator.clipboard.writeText(e.value)}catch(_){try{document.execCommand('copy')}catch(__){}}toast('Disalin')}
-function imp(){try{const d=JSON.parse($('#bk').value);if(!Array.isArray(d.acc)||!Array.isArray(d.tx))throw 0;S={bud:{},goals:[],...d};done();toast('Data dipulihkan')}catch(e){toast('Format cadangan tidak valid')}}
+function imp(){try{const d=JSON.parse($('#bk').value);if(!Array.isArray(d.acc)||!Array.isArray(d.tx))throw 0;S={bud:{},goals:[],...d};if(S.tx.length)M=S.tx.reduce((a,t)=>t.d>a?t.d:a,'').slice(0,7);done();toast('Dipulihkan: '+S.tx.length+' transaksi')}catch(e){toast('Format cadangan tidak valid')}}
 function resetSheet(){sheet(`<h3>Hapus semua data?</h3><p>Semua transaksi, dompet, anggaran, dan target akan dihapus permanen.</p><button class="btn dg" onclick="resetAll()">Ya, hapus semua</button><button class="btn" onclick="closeS()">Batal</button>`)}
 function resetAll(){S={acc:[{id:'a1',n:'Tunai',b:0}],tx:[],bud:{},goals:[]};done()}
 
@@ -357,6 +357,6 @@ function saveTx(){
 let UN;function delTx(){UN=S.tx.find(x=>x.id==D.id);S.tx=S.tx.filter(x=>x.id!=D.id);done();toast('Transaksi dihapus',1)}
 function undo(){if(UN){S.tx.push(UN);UN=null;save();render();toast('Dikembalikan')}}
 document.querySelectorAll('nav button').forEach(b=>b.firstChild.innerHTML=I({home:'home',tx:'list',bud:'chart',goal:'target',more:'wallet'}[b.dataset.v]));$('.fab').innerHTML=I('plus');
-document.body.insertAdjacentHTML('beforeend','<div id="lk"></div>');cleanDemo();runRec();save();setInterval(chk,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setTimeout(chk,800);if(PIN)lock('unlock');
+document.body.insertAdjacentHTML('beforeend','<div id="lk"></div>');runRec();save();setInterval(chk,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setTimeout(chk,800);if(PIN)lock('unlock');
 render(1);
 </script><script>if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script></body></html>
