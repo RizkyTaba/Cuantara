@@ -136,7 +136,8 @@ const I=n=>`<svg class='i' viewBox='0 0 24 24' aria-hidden='true'>${P[n]}</svg>`
 const EM=Object.fromEntries(Object.entries({Makanan:'utensils',Transport:'bus',Belanja:'bag',Tagihan:'list',Hiburan:'game',Kesehatan:'heart',Pendidikan:'book',Lainnya:'more',Gaji:'cash',Bonus:'gift',Usaha:'store'}).map(([k,v])=>[k,I(v)]));
 let S;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
 if(!S||!S.acc)S={acc:[{id:'a1',n:'Tunai',b:0},{id:'a2',n:'Rekening Bank',b:0},{id:'a3',n:'E-Wallet',b:0}],tx:[],bud:{},goals:[]};
-const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+let STG=true,LASTSAVE=null;
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S));if(localStorage.getItem(K)===null)throw 0;LASTSAVE=new Date()}catch(e){if(STG){STG=false;setTimeout(()=>toast('Penyimpanan di perangkat ini tidak aktif. Data bisa hilang saat ditutup.'),0)}}};
 const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const rp=n=>(n<0?'-':'')+'Rp'+Math.abs(Math.round(n)).toLocaleString('id-ID');
 const uid=()=>Math.random().toString(36).slice(2,9);
@@ -280,6 +281,9 @@ function ntSet(){const n=NT(),row=(id,t,s,c)=>`<label class='it'><div class='gr'
 async function saveNt(){const n=NT();n.daily=$('#nd').checked;n.time=$('#ntm').value||'20:00';let sys=$('#ns').checked,msg='Pengingat tersimpan';
  if(sys){if(!('Notification' in window)){sys=false;msg='Notifikasi sistem belum didukung di tampilan ini'}else if(Notification.permission!='granted'){try{sys=(await Notification.requestPermission())=='granted'}catch(e){sys=false}if(!sys)msg='Izin notifikasi tidak diberikan'}}
  n.sys=sys;done();toast(msg)}
+const stg=()=>STG?`Data tersimpan otomatis di perangkat ini (${S.tx.length} transaksi${LASTSAVE?', terakhir '+LASTSAVE.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):''}). Buat cadangan secara berkala supaya aman.`:'Penyimpanan di perangkat ini tidak aktif, jadi data akan hilang saat aplikasi ditutup. Coba buka lewat Chrome biasa (bukan mode penyamaran) atau pakai Cadangkan / pulihkan data.';
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+addEventListener('pagehide',save);
 function dupTx(){sync();D={...D,id:null,d:today()};drawTx()}
 function alerts(l,i,o){
  const sp={};l.filter(t=>t.t=='out').forEach(t=>sp[t.c]=(sp[t.c]||0)+t.m);
@@ -320,7 +324,7 @@ const delGoal=id=>{S.goals=S.goals.filter(g=>g.id!=id);done()};
 function depSheet(id){sheet(`<h3>Setor ke tabungan</h3><label>Jumlah (Rp, bisa diisi untuk menambah)</label><input class="fi" id="dv" inputmode="numeric" placeholder="0"><button class="btn" onclick="saveDep('${id}')">Setor</button>`)}
 function saveDep(id){const m=num('dv');if(!m)return toast('Isi jumlah');S.goals=S.goals.map(g=>g.id==id?{...g,s:g.s+m}:g);done()}
 
-function morev(){return `<h1>Dompet</h1>`+S.acc.map(a=>`<div class="it" onclick="accSheet('${a.id}')"><span class="ic">${I('wallet')}</span><div class="gr"><b>${E(a.n)}</b></div><b>${rh(accBal(a))}</b></div>`).join('')+`<button class='btn' onclick='accSheet()'>+ Dompet baru</button><h3>Transaksi berulang</h3>${recList()}<button class='btn' onclick='recSheet()'>+ Tambah transaksi berulang</button><h3>Pengaturan</h3><button class='btn ghost' onclick='pinSheet()'>${I('lock')} Kunci PIN: ${PIN?'aktif':'mati'}</button><button class='btn ghost' onclick='ntSet()'>${I('bell')} Pengingat dan notifikasi</button><h3>Data</h3><button class='btn' onclick='expSheet()'>${I('dl')} Ekspor ke Excel</button><p class="em" style="padding:4px 0 8px;text-align:left">Data tersimpan di browser HP ini. Buat cadangan secara berkala supaya aman.</p><button class="btn" onclick="bakSheet()">Cadangkan / pulihkan data</button><button class="btn dg" onclick="resetSheet()">Hapus semua data</button>`}
+function morev(){return `<h1>Dompet</h1>`+S.acc.map(a=>`<div class="it" onclick="accSheet('${a.id}')"><span class="ic">${I('wallet')}</span><div class="gr"><b>${E(a.n)}</b></div><b>${rh(accBal(a))}</b></div>`).join('')+`<button class='btn' onclick='accSheet()'>+ Dompet baru</button><h3>Transaksi berulang</h3>${recList()}<button class='btn' onclick='recSheet()'>+ Tambah transaksi berulang</button><h3>Pengaturan</h3><button class='btn ghost' onclick='pinSheet()'>${I('lock')} Kunci PIN: ${PIN?'aktif':'mati'}</button><button class='btn ghost' onclick='ntSet()'>${I('bell')} Pengingat dan notifikasi</button><h3>Data</h3><button class='btn' onclick='expSheet()'>${I('dl')} Ekspor ke Excel</button><p class="em" style="padding:4px 0 8px;text-align:left">${stg()}</p><button class="btn" onclick="bakSheet()">Cadangkan / pulihkan data</button><button class="btn dg" onclick="resetSheet()">Hapus semua data</button>`}
 function accSheet(id){const a=S.acc.find(x=>x.id==id)||{n:'',b:''};sheet(`<h3>${id?'Ubah':'Tambah'} dompet</h3><label>Nama</label><input class="fi" id="an" value="${E(a.n)}" placeholder="mis. BCA, GoPay"><label>Saldo awal (Rp)</label><input class="fi" id="ab" inputmode="numeric" value="${a.b}"><button class="btn" onclick="saveAcc('${id||''}')">Simpan</button>${id?`<button class="btn dg" onclick="delAcc('${id}')">Hapus</button>`:''}`)}
 function saveAcc(id){const n=$('#an').value.trim(),b=num('ab');if(!n)return toast('Isi nama dompet');if(id)S.acc=S.acc.map(a=>a.id==id?{...a,n,b}:a);else S.acc.push({id:uid(),n,b});done()}
 function delAcc(id){if(S.tx.some(t=>t.a==id||t.to==id))return toast('Dompet masih dipakai transaksi');if(S.acc.length<2)return toast('Minimal satu dompet');S.acc=S.acc.filter(a=>a.id!=id);done()}
@@ -353,6 +357,6 @@ function saveTx(){
 let UN;function delTx(){UN=S.tx.find(x=>x.id==D.id);S.tx=S.tx.filter(x=>x.id!=D.id);done();toast('Transaksi dihapus',1)}
 function undo(){if(UN){S.tx.push(UN);UN=null;save();render();toast('Dikembalikan')}}
 document.querySelectorAll('nav button').forEach(b=>b.firstChild.innerHTML=I({home:'home',tx:'list',bud:'chart',goal:'target',more:'wallet'}[b.dataset.v]));$('.fab').innerHTML=I('plus');
-document.body.insertAdjacentHTML('beforeend','<div id="lk"></div>');cleanDemo();runRec();setInterval(chk,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setTimeout(chk,800);if(PIN)lock('unlock');
+document.body.insertAdjacentHTML('beforeend','<div id="lk"></div>');cleanDemo();runRec();save();setInterval(chk,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setTimeout(chk,800);if(PIN)lock('unlock');
 render(1);
 </script><script>if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script></body></html>
