@@ -3,10 +3,15 @@ name: Build APK
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
   workflow_dispatch:
 
 permissions:
   contents: write
+
+env:
+  VERSION: 1.0.${{ github.run_number }}
 
 jobs:
   build:
@@ -26,19 +31,31 @@ jobs:
         run: |
           mkdir -p www
           cp index.html manifest.webmanifest sw.js icon-192.png icon-512.png www/
+          sed -i "s/__APP_VERSION__/$VERSION/" www/index.html
       - name: Buat proyek Android
         run: npx cap add android
+      - name: Atur versi APK
+        run: |
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"$VERSION\"/" android/app/build.gradle
       - name: Build APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
+      - name: Beri nama APK
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk Cuantara.apk
+          cp Cuantara.apk Cuantara-v$VERSION.apk
       - uses: actions/upload-artifact@v4
         with:
           name: cuantara-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: Cuantara.apk
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: apk-terbaru
-          name: Cuantara APK
-          files: android/app/build/outputs/apk/debug/app-debug.apk
+          tag_name: v${{ env.VERSION }}
+          name: Cuantara v${{ env.VERSION }}
+          make_latest: true
+          files: |
+            Cuantara.apk
+            Cuantara-v${{ env.VERSION }}.apk
